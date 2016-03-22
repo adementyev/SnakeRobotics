@@ -251,7 +251,18 @@ void receiveEvent(int howMany)
     case 8: 
       pixels.setPixelColor(6, pixels.Color(0,0,20)); // Moderately bright green color.
       pixels.show(); 
-      
+    case 9: 
+      digitalWrite(LED_RED, HIGH);
+      break; 
+    case 10: 
+      digitalWrite(LED_RED, LOW);
+      break; 
+    case 11: 
+      digitalWrite(LED_GREEN, HIGH);
+      break;
+    case 12: 
+      digitalWrite(LED_GREEN, LOW);
+      break;      
     default:
     break;
   } 

@@ -58,14 +58,20 @@ void setup()
     
     frameRate(60);
     //turnServoOn(1); 
-    turnOnBlueLED(4);
-   turnOnBlueLED(5);
+  //  turnOnBlueLED(4);
+  // turnOnBlueLED(5);
    
-   turnOnBlueLED(3);
-   turnOnBlueLED(2);
-   turnOnBlueLED(1);
+  // turnOnBlueLED(3);
+  // turnOnBlueLED(2);
+  // turnOnBlueLED(1);
    //testCommand2(5);
-   turnServoOn(3); 
+   for (int i = 1; i<10; i++) { 
+     turnServoOn(i); 
+     try { 
+       Thread.sleep(10);
+     } catch(Exception e){}
+   }
+
     
 }//end setup
 
@@ -99,7 +105,10 @@ void draw() {
         
         //SERVO TEST PROGRAM
         if (someInt % 1 == 0){
+         // testCommand_MAX_DATA_PACKET(currentServo);
+        //  sendLEDpattern(currentServo);
         sendServoPosConverted(currentServo,someInt);//someInt);
+        //testCommand4(currentServo);
        // turnOnBlueLED(currentServo);
         //sendServoPosConverted(currentServo+1,someInt);//someInt);
        // sendServoPosConverted(currentServo+2,someInt);//someInt);
@@ -108,8 +117,8 @@ void draw() {
         if (someInt >1700) { 
           someInt =1300; 
           currentServo++;     
-          turnServoOn(currentServo); 
-          if (currentServo==6) currentServo=0;
+         // turnServoOn(currentServo); 
+          if (currentServo==11) currentServo=0;
         }
         
         
@@ -214,7 +223,9 @@ public void keyPressed() {
    }
    else if (key =='0') { 
       turnOffBlueLED(3);
-
+  }
+  else if (key=='q') { 
+    testCommand_MAX_DATA_PACKET(1);
   }
 }//end keyPressed
 
@@ -250,7 +261,7 @@ public void sendServoPosConverted( int node,int pos) {
       int convertedPos = round(tempPos);
       
       byte [] data = {(byte)(convertedPos/256),(byte)(convertedPos & 0xff)};  
-      sendData(node, (byte)3, (byte)2, data );
+      sendDataBlock(node, (byte)3, (byte)2, data );
       
       /*
       myPort.write((char)(node/256));
@@ -269,7 +280,7 @@ public void sendServoPosConverted( int node,int pos) {
 
 public void turnServoOn(int node) {
     byte [] data = {1}; 
-    sendData(node,(byte)2,(byte)1,data); 
+    sendDataBlock(node,(byte)2,(byte)1,data); 
    /*     
     myPort.write((char)(node/256));
     myPort.write(node & 0xff);
@@ -282,7 +293,7 @@ public void turnServoOn(int node) {
 
 public void turnServoOff(int node) {
     byte [] data = {1}; 
-    sendData(node,(byte)1,(byte)1,data);
+    sendDataBlock(node,(byte)1,(byte)1,data);
     /*
     myPort.write((char)(node/256));
     myPort.write(node & 0xff);
@@ -316,12 +327,12 @@ void sendData() {
 
 void turnOnBlueLED(int node) { 
     byte [] data = {1}; 
-    sendData(node,(byte)4,(byte)1,data);
+    sendDataBlock(node,(byte)4,(byte)1,data);
 }
 
 void turnOffBlueLED(int node) { 
     byte [] data = {1}; 
-    sendData(node,(byte)5,(byte)1,data);
+    sendDataBlock(node,(byte)5,(byte)1,data);
 }
 
 void testCommand1(int node) { 
@@ -345,6 +356,8 @@ void testCommand2(int node) {
                   0,20,0,
                   0,20,0,
                   0,20,0};
+                  
+                  
   sendData(node, byte (6), byte (24),data );
 }
 
@@ -360,10 +373,49 @@ void testCommand4(int node) {
   sendData(node, byte (6), byte (24),data );
 }
 
+void testCommand_MAX_DATA_PACKET(int node) { 
+  byte [] data = {0,20,0, 
+                  0,20,0,
+                  0,20,0,
+                  0,20,0,
+                  0,0,20,
+                  0,0,20,
+                  0,0,20,
+                  0,0,20};
+  sendDataBlock(node, byte(6),byte(24),data );
+}
+
+void sendLEDpattern(int node) { 
+  int randomNum = (int)(random(0,2)); 
+    byte [] data1 = {0,20,0, 
+                  0,20,0,
+                  0,20,0,
+                  0,20,0,
+                  0,0,20,
+                  0,0,20,
+                  0,0,20,
+                  0,0,20};
+     byte [] data2 = {20,0,0, 
+                      20,0,0,
+                      20,0,0,
+                      20,0,0,
+                      0,20,0,
+                      0,20,0,
+                      0,20,0,
+                      0,20,0};
+  if ((int)randomNum == 0 ) { 
+    sendDataBlock(node, byte(6),byte(24),data1 );
+  }
+  else if ((int)randomNum ==1) { 
+    sendDataBlock(node, byte(6),byte(24),data2 );
+  }
+  
+}
+
 void sendData(int node, byte opCode, byte sizeofData, byte []data ) { 
     //nice page explaining: 
     //http://blog.danielkerris.com/?p=349   
-    
+    myPort.write('@');
     //Send address
     myPort.write((char)(node/256));
     myPort.write(node & 0xff);
@@ -375,6 +427,21 @@ void sendData(int node, byte opCode, byte sizeofData, byte []data ) {
     for(int i=0; i<sizeofData; i++) { 
       myPort.write(data[i]);
     }   
+}
+
+void sendDataBlock(int node, byte opCode, byte sizeofData, byte []data ) { 
+    //nice page explaining: 
+    //http://blog.danielkerris.com/?p=349   
+    byte [] dataBlock = new byte [sizeofData+5]; 
+    dataBlock[0] = '@';
+    dataBlock[1] = (byte)(node/256); 
+    dataBlock[2] = (byte)(node & 0xff);
+    dataBlock[3] = opCode;
+    dataBlock[4] = sizeofData;
+    for(int i=0;i<sizeofData; i++){ 
+       dataBlock[5+i] = data[i];
+    }
+    myPort.write(dataBlock);  
 }
 
 void sendDataLEDS(byte[] data) { 
